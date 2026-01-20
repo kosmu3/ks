@@ -52,16 +52,22 @@
 
     .title{
       font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(90px, 18vw, 140px);
       margin:0;
-      line-height: 0.82;
-      display:inline-block;
+      line-height:0.9;
+      display:block;
 
+    /* ✅ 모바일에서 거의 꽉 차게 */
+      font-size: clamp(72px, 23vw, 130px);
+
+    /* ✅ 네가 쓰는 세로 늘림 유지 */
       transform: scaleY(var(--title-scaleY));
-      transform-origin: left top;
-      letter-spacing: -1px;
-      margin-bottom: 80px;
+      transform-origin:left top;
+
+    /* ✅ 좌우 꽉 차 보이게(간격 조절) */
+      letter-spacing: -0.04em;
+      margin-bottom: 85px;
     }
+
 
     .date{
       margin-top: 10px; /* 타이틀 바로 아래 날짜 */
