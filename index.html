@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tokyo Trip</title>
+  <style>
+    :root{
+      --bg:#f4f4f0;
+      --ink:#111;
+      --muted:#666;
+      --card:#fff;
+      --line: rgba(0,0,0,.10);
+      --shadow: 0 18px 50px rgba(0,0,0,.12);
+    }
+
+    html,body{
+      margin:0; height:100%;
+      background:var(--bg);
+      color:var(--ink);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    }
+
+    /* 화면 중앙 “폰 화면” 느낌 */
+    .wrap{
+      min-height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:22px;
+    }
+    .screen{
+      width:min(420px, 100%);
+      background:transparent;
+    }
+
+    .title{
+      font-family: Georgia, "Times New Roman", serif;
+      font-size:72px;
+      letter-spacing:-1px;
+      margin:0;
+      line-height:1;
+    }
+    .date{
+      margin-top:8px;
+      font-size:14px;
+      color:var(--muted);
+      font-weight:600;
+    }
+
+    .bars{
+      margin-top:42px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .barBtn{
+      appearance:none;
+      border:none;
+      width:100%;
+      height:18px;
+      border-radius:999px;
+      cursor:pointer;
+      box-shadow: 0 10px 18px rgba(0,0,0,.10);
+      position:relative;
+      outline:none;
+      transform: translateZ(0);
+    }
+    .barBtn:focus-visible{
+      box-shadow: 0 0 0 3px rgba(0,0,0,.20), 0 10px 18px rgba(0,0,0,.10);
+    }
+    .barBtn.active{
+      box-shadow: 0 0 0 3px rgba(0,0,0,.20), 0 14px 22px rgba(0,0,0,.14);
+    }
+
+    /* 모달(일정 상세) */
+    .modal{
+      position:fixed; inset:0;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      background: rgba(244,244,240,.82);
+      backdrop-filter: blur(6px);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .18s ease;
+      padding:16px;
+    }
+    .modal.open{
+      opacity:1;
+      pointer-events:auto;
+    }
+    .sheet{
+      width:min(520px, 100%);
+      max-height:78vh;
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:22px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      transform: translateY(16px);
+      transition: transform .18s ease;
+    }
+    .modal.open .sheet{ transform: translateY(0); }
+
+    .sheetTop{
+      padding:16px 16px 12px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+    }
+    .sheetTop h2{
+      margin:0;
+      font-size:16px;
+      font-weight:900;
+      letter-spacing:-.3px;
+    }
+    .sheetTop .sub{
+      margin-top:6px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.4;
+    }
+    .x{
+      width:36px; height:36px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#fff;
+      cursor:pointer;
+      font-size:18px;
+      line-height:36px;
+    }
+
+    .sheetBody{
+      padding:14px 16px 16px;
+      overflow:auto;
+    }
+
+    .timeline{
+      list-style:none;
+      margin:0;
+      padding:0;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .row{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+    }
+    .time{
+      min-width:64px;
+      font-weight:900;
+      color:var(--ink);
+      font-size:13px;
+    }
+    .place{
+      font-weight:800;
+      font-size:14px;
+      letter-spacing:-.2px;
+    }
+    .note{
+      margin-top:4px;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .actions{
+      margin-top:14px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .btn{
+      border:none;
+      border-radius:12px;
+      padding:10px 12px;
+      cursor:pointer;
+      font-weight:800;
+      font-size:13px;
+    }
+    .btn.primary{ background:#111; color:#fff; }
+    .btn.secondary{ background:#fff; border:1px solid var(--line); color:#111; }
+
+    /* 작은 안내 텍스트 */
+    .hint{
+      margin-top:18px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="screen">
+      <h1 class="title">Tokyo</h1>
+      <div class="date" id="dateText">2026. 01</div>
+
+      <div class="bars" id="bars"></div>
+
+      <div class="hint">컬러 바 = 1~5일차. 눌러서 그날 일정 보기.</div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="modal" aria-hidden="true">
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="sheetTop">
+        <div>
+          <h2 id="mTitle">DAY 1</h2>
+          <div class="sub" id="mSub">날짜 / 요약</div>
+        </div>
+        <button class="x" id="mClose" aria-label="닫기">×</button>
+      </div>
+      <div class="sheetBody">
+        <ul class="timeline" id="mTimeline"></ul>
+        <div class="actions">
+          <button class="btn primary" id="copyBtn">일정 텍스트 복사</button>
+          <button class="btn secondary" id="closeBtn">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ✅ 여기 일정 데이터만 바꾸면 전체 UI가 자동으로 바뀜
+    const DAYS = [
+      {
+        day: 1,
+        date: "1/23 (금)",
+        color: "#F5E21A",
+        summary: "출국 → 나리타 → 신주쿠 체크인",
+        items: [
+          { time:"10:00", place:"강일역 출발" },
+          { time:"12:00", place:"인천공항 1터미널 수속" },
+          { time:"15:20", place:"인천공항 출발" },
+          { time:"18:00", place:"나리타 공항 도착", note:"1터미널 JR 타는 곳 앞에서 웰컴 스이카 발급. 2000엔 충전해두기" },
+          { time:"20:00", place:"신주쿠 쿠에쿠쇼마에 숙소 체크인" },
+          { time:"—", place:"저녁", note:"이자카야" },
+          { time:"—", place:"취침" },
+        ],
+      },
+      {
+        day: 2,
+        date: "1/24 (토)",
+        color: "#F6B21B",
+        summary: "아사쿠사/우에노 + 도쿄도청 전망대",
+        items: [
+          { time:"09:00", place:"기상" },
+          { time:"10:00", place:"출발" },
+          { time:"10:20", place:"더포아이드 증사네컷" },
+          { time:"11:00", place:"아사쿠사 센소지 도착", note:"기모노&유카타 입을거면 3000엔" },
+          { time:"12:30", place:"점심", note:"아사쿠사몬쟈 젠야" },
+          { time:"14:00", place:"이와사키 저택 정원", note:"400엔" },
+          { time:"14:30", place:"우에노 공원 자전거 대여", note:"1시간 200엔 / 진보초 서점거리 / 아키아바라" },
+          { time:"16:30", place:"우에노 공원 자전거 반납" },
+          { time:"17:00", place:"저녁", note:"샤탄 이자카야 오픈런" },
+          { time:"20:00", place:"도쿄도청 남측 전망대" },
+          { time:"21:00", place:"이자카야" },
+          { time:"—", place:"취침" },
+        ],
+      },
+      {
+        day: 3,
+        date: "1/25 (일)",
+        color: "#3B86FF",
+        summary: "가마쿠라 → 시모키타자와 → 롯폰기/하라주쿠",
+        items: [
+          { time:"08:00", place:"기상" },
+          { time:"09:00", place:"출발", note:"(지하철 1시간 40분)" },
+          { time:"11:00", place:"가마쿠라", note:"코시고에 해안" },
+          { time:"12:00", place:"점심", note:"(미정)" },
+          { time:"15:00", place:"시모키타자와 아이쇼핑" },
+          { time:"17:00", place:"국립신미술관", note:"(너의 이름은 배경지) / 도보 10분" },
+          { time:"18:00", place:"롯폰기힐스 일루미네이션" },
+          { time:"19:00", place:"하라주쿠", note:"저녁 쇼핑 카페" },
+          { time:"21:00", place:"이자카야" },
+          { time:"—", place:"돈키호테", note:"숙소 근처 쇼핑" },
+          { time:"—", place:"취침" },
+        ],
+      },
+      {
+        day: 4,
+        date: "1/26 (월)",
+        color: "#FF2D8A",
+        summary: "디즈니랜드/친구 만남 (자유 일정)",
+        items: [
+          { time:"09:00", place:"기상" },
+          { time:"10:00", place:"오니기리 먹고 놀러가기" },
+          { time:"10:30", place:"칼디 쇼핑하세요~" },
+          { time:"11:00", place:"자유", note:"자유시간" },
+        ],
+      },
+      {
+        day: 5,
+        date: "1/27 (화)",
+        color: "#35C759",
+        summary: "체크아웃 → 귀국",
+        items: [
+          { time:"08:30", place:"기상 & 체크아웃" },
+          { time:"10:00", place:"공항 도착 후 수속" },
+          { time:"11:55", place:"나리타 공항 출발" },
+          { time:"14:55", place:"인천 공항 도착" },
+          { time:"18:00", place:"동네~" },
+        ],
+      },
+    ];
+
+    // UI 생성
+    const bars = document.getElementById("bars");
+    const modal = document.getElementById("modal");
+    const mTitle = document.getElementById("mTitle");
+    const mSub = document.getElementById("mSub");
+    const mTimeline = document.getElementById("mTimeline");
+    const mClose = document.getElementById("mClose");
+    const closeBtn = document.getElementById("closeBtn");
+    const copyBtn = document.getElementById("copyBtn");
+
+    let activeDay = null;
+
+    function openDay(d){
+      activeDay = d;
+
+      // bar active 표시
+      document.querySelectorAll(".barBtn").forEach(b => b.classList.remove("active"));
+      const btn = document.querySelector(`.barBtn[data-day="${d.day}"]`);
+      if(btn) btn.classList.add("active");
+
+      mTitle.textContent = `DAY ${d.day}`;
+      mSub.textContent = `${d.date} · ${d.summary}`;
+
+      mTimeline.innerHTML = d.items.map(it => `
+        <li class="row">
+          <div class="time">${it.time}</div>
+          <div>
+            <div class="place">${it.place}</div>
+            ${it.note ? `<div class="note">${it.note}</div>` : ""}
+          </div>
+        </li>
+      `).join("");
+
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden","false");
+    }
+
+    function closeModal(){
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden","true");
+    }
+
+    DAYS.forEach(d => {
+      const btn = document.createElement("button");
+      btn.className = "barBtn";
+      btn.style.background = d.color;
+      btn.setAttribute("data-day", d.day);
+      btn.setAttribute("aria-label", `DAY ${d.day} 보기`);
+      btn.addEventListener("click", () => openDay(d));
+      bars.appendChild(btn);
+    });
+
+    // 기본으로 1일차 바로 열고 싶으면 아래 주석 해제
+    // openDay(DAYS[0]);
+
+    // 닫기
+    mClose.addEventListener("click", closeModal);
+    closeBtn.addEventListener("click", closeModal);
+    modal.addEventListener("click", (e)=>{ if(e.target === modal) closeModal(); });
+    window.addEventListener("keydown", (e)=>{ if(e.key === "Escape") closeModal(); });
+
+    // 일정 복사
+    copyBtn.addEventListener("click", async () => {
+      if(!activeDay) return;
+      const text = [
+        `DAY ${activeDay.day} · ${activeDay.date}`,
+        activeDay.summary,
+        "",
+        ...activeDay.items.map(it => `${it.time}  ${it.place}${it.note ? " — " + it.note : ""}`)
+      ].join("\n");
+
+      try{
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = "복사 완료!";
+        setTimeout(()=> copyBtn.textContent = "일정 텍스트 복사", 900);
+      }catch{
+        alert("복사 권한이 없어요. 브라우저 설정을 확인해줘!");
+      }
+    });
+  </script>
+</body>
+</html>
