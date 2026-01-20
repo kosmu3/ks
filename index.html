@@ -55,7 +55,7 @@
       margin:0;
       line-height:0.9;
       display:block;
-      font-size: clamp(92px, 28vw, 170px);
+      font-size: clamp(72px, 23vw, 130px);
 
     /* ✅ 네가 쓰는 세로 늘림 유지 */
       transform: scaleY(var(--title-scaleY));
@@ -244,12 +244,23 @@
     .btn.primary{ background:#111; color:#fff; }
     .btn.secondary{ background:#fff; border:1px solid var(--line); color:#111; }
 
-    /* 작은 화면에서 여백 최적화 */
-    @media (max-width: 360px){
-      .screen{ padding:18px 18px calc(16px + env(safe-area-inset-bottom)); }
+    /* 모바일 여백 최적화 */
+    @media (max-width: 480px){
+      .screen{ padding:18px 18px calc(18px + env(safe-area-inset-bottom)); }
       .hero{ padding-bottom: 54px; }
       .bars{ gap:10px; }
+      .title{
+        font-size: clamp(92px, 28vw, 180px); /* ✅ 모바일만 크게 */
+        letter-spacing: -0.045em;
+      }
     }
+
+    @media (max-width: 360px){
+      .title{
+        font-size: clamp(88px, 26vw, 160px);
+      }
+    }
+
   </style>
 </head>
 
