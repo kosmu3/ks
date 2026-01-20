@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Tokyo Trip</title>
   <style>
     :root{
@@ -12,6 +12,8 @@
       --card:#fff;
       --line: rgba(0,0,0,.10);
       --shadow: 0 18px 50px rgba(0,0,0,.12);
+
+      --title-scaleY: 1.90; /* 세로 길쭉 */
     }
 
     html,body{
@@ -21,38 +23,67 @@
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     }
 
-    /* 화면 중앙 “폰 화면” 느낌 */
+    /* 화면을 “폰 한 장”처럼 */
     .wrap{
       min-height:100%;
       display:flex;
       align-items:center;
       justify-content:center;
-      padding:22px;
+      padding:0;
     }
+
+    /* ✅ 핵심 레이아웃: 위(타이틀) / 중간 여백 / 아래(바) */
     .screen{
-      width:min(420px, 100%);
-      background:transparent;
+      width:min(430px, 100%);
+      height:100svh;
+      padding:22px 22px calc(18px + env(safe-area-inset-bottom));
+      display:flex;
+      flex-direction:column;
+    }
+
+    /* ===== TOP (Tokyo + date) ===== */
+    .hero{
+      flex:0 0 auto;
+      padding-top:2px;
+      /* ✅ scaleY 때문에 아래 요소랑 겹치지 않도록 자리 확보 */
+      padding-bottom: 40px; /* 필요하면 40~90 사이로 조절 */
     }
 
     .title{
       font-family: Georgia, "Times New Roman", serif;
-      font-size:72px;
-      letter-spacing:-1px;
+      font-size: clamp(74px, 18vw, 106px);
       margin:0;
-      line-height:1;
+      line-height: 0.82;
+      display:inline-block;
+
+      transform: scaleY(var(--title-scaleY));
+      transform-origin: left top;
+      letter-spacing: -1px;
+      margin-bottom: 60px;
     }
+
     .date{
-      margin-top:8px;
+      margin-top: 10px; /* 타이틀 바로 아래 날짜 */
       font-size:14px;
       color:var(--muted);
       font-weight:600;
     }
 
+    /* 중간 여백 */
+    .spacer{
+      flex:1 1 auto;
+      min-height: 0;
+    }
+
+    /* ===== BOTTOM (bars + hint) ===== */
+    .dock{
+      flex:0 0 auto;
+    }
+
     .bars{
-      margin-top:42px;
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap:12px;
     }
 
     .barBtn{
@@ -62,68 +93,81 @@
       height:18px;
       border-radius:999px;
       cursor:pointer;
-      box-shadow: 0 10px 18px rgba(0,0,0,.10);
-      position:relative;
+      box-shadow: 0 12px 20px rgba(0,0,0,0.12);
       outline:none;
-      transform: translateZ(0);
-    }
-    .barBtn:focus-visible{
-      box-shadow: 0 0 0 3px rgba(0,0,0,.20), 0 10px 18px rgba(0,0,0,.10);
-    }
-    .barBtn.active{
-      box-shadow: 0 0 0 3px rgba(0,0,0,.20), 0 14px 22px rgba(0,0,0,.14);
+      position:relative;
     }
 
-    /* 모달(일정 상세) */
+    .barBtn.active{
+      box-shadow:
+        0 0 0 3px rgba(0,0,0,.18),
+        0 14px 22px rgba(0,0,0,.16);
+    }
+
+    .hint{
+      margin-top:12px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    /* ===== Modal (Bottom Sheet) ===== */
     .modal{
       position:fixed; inset:0;
       display:flex;
-      align-items:flex-end;
       justify-content:center;
+      align-items:flex-end;
       background: rgba(244,244,240,.82);
       backdrop-filter: blur(6px);
       opacity:0;
       pointer-events:none;
       transition: opacity .18s ease;
-      padding:16px;
+      padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+      z-index: 100;
     }
     .modal.open{
       opacity:1;
       pointer-events:auto;
     }
+
     .sheet{
       width:min(520px, 100%);
-      max-height:78vh;
-      background:var(--card);
+      max-height: 78vh;
+      background: var(--card);
       border:1px solid var(--line);
-      border-radius:22px;
+      border-radius: 22px;
       box-shadow: var(--shadow);
       overflow:hidden;
-      transform: translateY(16px);
+      transform: translateY(18px);
       transition: transform .18s ease;
     }
-    .modal.open .sheet{ transform: translateY(0); }
+    .modal.open .sheet{
+      transform: translateY(0);
+    }
 
     .sheetTop{
-      padding:16px 16px 12px;
+      padding: 16px 16px 12px;
       border-bottom:1px solid var(--line);
       display:flex;
       justify-content:space-between;
       gap:12px;
       align-items:flex-start;
     }
+
     .sheetTop h2{
       margin:0;
       font-size:16px;
       font-weight:900;
-      letter-spacing:-.3px;
+      letter-spacing:-.2px;
     }
+
     .sheetTop .sub{
       margin-top:6px;
       font-size:12px;
       color:var(--muted);
       line-height:1.4;
     }
+
     .x{
       width:36px; height:36px;
       border-radius:999px;
@@ -135,7 +179,7 @@
     }
 
     .sheetBody{
-      padding:14px 16px 16px;
+      padding: 14px 16px 16px;
       overflow:auto;
     }
 
@@ -147,27 +191,33 @@
       flex-direction:column;
       gap:12px;
     }
+
     .row{
       display:flex;
       gap:12px;
       align-items:flex-start;
     }
+
     .time{
       min-width:64px;
       font-weight:900;
       color:var(--ink);
       font-size:13px;
+      letter-spacing:-.1px;
     }
+
     .place{
-      font-weight:800;
+      font-weight:850;
       font-size:14px;
       letter-spacing:-.2px;
     }
+
     .note{
       margin-top:4px;
       font-size:13px;
       color:var(--muted);
       line-height:1.5;
+      word-break: keep-all;
     }
 
     .actions{
@@ -176,6 +226,7 @@
       gap:10px;
       flex-wrap:wrap;
     }
+
     .btn{
       border:none;
       border-radius:12px;
@@ -184,27 +235,33 @@
       font-weight:800;
       font-size:13px;
     }
+
     .btn.primary{ background:#111; color:#fff; }
     .btn.secondary{ background:#fff; border:1px solid var(--line); color:#111; }
 
-    /* 작은 안내 텍스트 */
-    .hint{
-      margin-top:18px;
-      font-size:12px;
-      color:var(--muted);
-      line-height:1.5;
+    /* 작은 화면에서 여백 최적화 */
+    @media (max-width: 360px){
+      .screen{ padding:18px 18px calc(16px + env(safe-area-inset-bottom)); }
+      .hero{ padding-bottom: 54px; }
+      .bars{ gap:10px; }
     }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="screen">
-      <h1 class="title">Tokyo</h1>
-      <div class="date" id="dateText">2026. 01</div>
+      <header class="hero">
+        <h1 class="title">Tokyo</h1>
+        <div class="date" id="dateText">2026. 01</div>
+      </header>
 
-      <div class="bars" id="bars"></div>
+      <div class="spacer"></div>
 
-      <div class="hint">컬러 바 = 1~5일차. 눌러서 그날 일정 보기.</div>
+      <footer class="dock">
+        <div class="bars" id="bars"></div>
+        <div class="hint">컬러 바 = 1~5일차. 눌러서 그날 일정 보기.</div>
+      </footer>
     </div>
   </div>
 
@@ -214,10 +271,11 @@
       <div class="sheetTop">
         <div>
           <h2 id="mTitle">DAY 1</h2>
-          <div class="sub" id="mSub">날짜 / 요약</div>
+          <div class="sub" id="mSub">날짜 · 요약</div>
         </div>
         <button class="x" id="mClose" aria-label="닫기">×</button>
       </div>
+
       <div class="sheetBody">
         <ul class="timeline" id="mTimeline"></ul>
         <div class="actions">
@@ -229,7 +287,7 @@
   </div>
 
   <script>
-    // ✅ 여기 일정 데이터만 바꾸면 전체 UI가 자동으로 바뀜
+    // ✅ 일정 데이터
     const DAYS = [
       {
         day: 1,
@@ -260,7 +318,7 @@
           { time:"14:00", place:"이와사키 저택 정원", note:"400엔" },
           { time:"14:30", place:"우에노 공원 자전거 대여", note:"1시간 200엔 / 진보초 서점거리 / 아키아바라" },
           { time:"16:30", place:"우에노 공원 자전거 반납" },
-          { time:"17:00", place:"저녁", note:"샤탄 이자카야 오픈런" },
+          { time:"17:00", place:"저녁", note:"챠탄 이자카야 오픈런" },
           { time:"20:00", place:"도쿄도청 남측 전망대" },
           { time:"21:00", place:"이자카야" },
           { time:"—", place:"취침" },
@@ -289,12 +347,12 @@
         day: 4,
         date: "1/26 (월)",
         color: "#FF2D8A",
-        summary: "디즈니랜드/친구 만남 (자유 일정)",
+        summary: "요요기 공원 및자유일정",
         items: [
           { time:"09:00", place:"기상" },
-          { time:"10:00", place:"오니기리 먹고 놀러가기" },
-          { time:"10:30", place:"칼디 쇼핑하세요~" },
-          { time:"11:00", place:"자유", note:"자유시간" },
+          { time:"09:30", place:"요요기 산책 및 오니기리" },
+          { time:"10:00", place:"칼디 쇼핑하세요~" },
+          { time:"12:00", place:"자유시간" },
         ],
       },
       {
@@ -312,7 +370,7 @@
       },
     ];
 
-    // UI 생성
+    // UI refs
     const bars = document.getElementById("bars");
     const modal = document.getElementById("modal");
     const mTitle = document.getElementById("mTitle");
@@ -327,7 +385,7 @@
     function openDay(d){
       activeDay = d;
 
-      // bar active 표시
+      // active 표시
       document.querySelectorAll(".barBtn").forEach(b => b.classList.remove("active"));
       const btn = document.querySelector(`.barBtn[data-day="${d.day}"]`);
       if(btn) btn.classList.add("active");
@@ -354,6 +412,7 @@
       modal.setAttribute("aria-hidden","true");
     }
 
+    // bars 생성
     DAYS.forEach(d => {
       const btn = document.createElement("button");
       btn.className = "barBtn";
@@ -364,16 +423,13 @@
       bars.appendChild(btn);
     });
 
-    // 기본으로 1일차 바로 열고 싶으면 아래 주석 해제
-    // openDay(DAYS[0]);
-
-    // 닫기
+    // 닫기 이벤트
     mClose.addEventListener("click", closeModal);
     closeBtn.addEventListener("click", closeModal);
     modal.addEventListener("click", (e)=>{ if(e.target === modal) closeModal(); });
     window.addEventListener("keydown", (e)=>{ if(e.key === "Escape") closeModal(); });
 
-    // 일정 복사
+    // 복사
     copyBtn.addEventListener("click", async () => {
       if(!activeDay) return;
       const text = [
@@ -391,6 +447,9 @@
         alert("복사 권한이 없어요. 브라우저 설정을 확인해줘!");
       }
     });
+
+    // (원하면) 첫 접속 시 1일차 자동 오픈:
+    // openDay(DAYS[0]);
   </script>
 </body>
 </html>
